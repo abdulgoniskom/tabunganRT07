@@ -2,184 +2,98 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; font-size: 13px; }
-    .header-rt { background: #1a2a3a; color: white; padding: 25px 15px; border-bottom: 5px solid #f39c12; }
-    .card-custom { background: white; border-radius: 10px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-    
-    /* Pengaturan Cetak */
+    body { background-color: #f8f9fa; font-size: 13px; }
+    .header-rt { background: #1a2a3a; color: white; padding: 20px; border-bottom: 5px solid #f39c12; }
+    .table-responsive { font-size: 11px; }
+    @media print { .no-print { display: none !important; } .print-only { display: block !important; } }
     .print-only { display: none; }
-    @media print {
-      .no-print { display: none !important; }
-      .print-only { display: block; }
-      body { background: white; }
-      .card-custom { box-shadow: none; border: none; margin-top: 0; }
-      .table { font-size: 11px; width: 100% !important; border: 1px solid #000; }
-      .table th, .table td { border: 1px solid #000 !important; }
-      .header-rt { color: black; background: white; border-bottom: 2px solid black; }
-    }
-    
-    .table thead th { background-color: #2c3e50; color: white; text-align: center; }
   </style>
 </head>
 <body>
 
-<div class="header-rt text-center shadow-sm">
-  <h3 class="fw-bold mb-1">LAPORAN TABUNGAN RT 07</h3>
-  <p class="mb-3 small">Transparansi Keuangan Warga - Bumi Indah</p>
-  
-  <div class="no-print d-flex justify-content-center gap-2">
-    <button class="btn btn-sm btn-outline-light" id="btnLogin" onclick="promptLogin()">Login Admin</button>
-    <button class="btn btn-sm btn-warning fw-bold" onclick="window.print()">Cetak PDF</button>
-    <button class="btn btn-sm btn-danger d-none" id="btnLogout" onclick="location.reload()">Logout</button>
+<div class="header-rt text-center">
+  <h5 class="fw-bold">LAPORAN TABUNGAN RT 07</h5>
+  <div class="no-print d-flex justify-content-center gap-2 mt-2">
+    <button class="btn btn-sm btn-outline-light" onclick="promptLogin()">Admin</button>
+    <button class="btn btn-sm btn-warning" onclick="window.print()">Cetak</button>
   </div>
 </div>
 
-<div class="container mt-4">
-  <div class="card-custom mb-3 no-print border-0 bg-white">
+<div class="container mt-3">
+  <div class="row g-2 mb-3 no-print">
+    <div class="col-6"><select id="fTahun" class="form-select form-select-sm" onchange="render(filterData())"><option value="">Semua Tahun</option><option value="2025">2025</option><option value="2026">2026</option></select></div>
+    <div class="col-6"><select id="fBulan" class="form-select form-select-sm" onchange="render(filterData())"><option value="">Semua Bulan</option><option value="-01-">Januari</option><option value="-02-">Februari</option><option value="-03-">Maret</option></select></div>
+  </div>
+
+  <div id="adminArea" class="card p-3 mb-3 d-none no-print shadow-sm">
     <div class="row g-2">
-      <div class="col-6 col-md-5">
-        <label class="small fw-bold">Pilih Tahun</label>
-        <select id="fTahun" class="form-select form-select-sm" onchange="applyFilter()">
-          <option value="">Semua Tahun</option>
-          <option value="2025">2025</option>
-          <option value="2026">2026</option>
-        </select>
-      </div>
-      <div class="col-6 col-md-5">
-        <label class="small fw-bold">Pilih Bulan</label>
-        <select id="fBulan" class="form-select form-select-sm" onchange="applyFilter()">
-          <option value="">Semua Bulan</option>
-          <option value="-01-">Januari</option><option value="-02-">Februari</option>
-          <option value="-03-">Maret</option><option value="-04-">April</option>
-          <option value="-05-">Mei</option><option value="-06-">Juni</option>
-          <option value="-07-">Juli</option><option value="-08-">Agustus</option>
-          <option value="-09-">September</option><option value="-10-">Oktober</option>
-          <option value="-11-">November</option><option value="-12-">Desember</option>
-        </select>
-      </div>
+      <div class="col-6"><input type="date" id="inpTgl" class="form-control form-control-sm"></div>
+      <div class="col-6"><select id="inpNama" class="form-select form-select-sm"></select></div>
+      <div class="col-6"><input type="number" id="inpMasuk" class="form-control form-control-sm" placeholder="Masuk"></div>
+      <div class="col-6"><input type="number" id="inpKeluar" class="form-control form-control-sm" placeholder="Keluar"></div>
+      <button class="btn btn-primary btn-sm mt-2" onclick="simpan()">Simpan</button>
     </div>
   </div>
 
-  <div id="adminArea" class="card-custom d-none no-print mb-4 border-start border-4 border-primary">
-    <h6 class="fw-bold text-primary mb-3">Tambah Transaksi</h6>
-    <div class="row g-2">
-      <div class="col-6 col-md-3"><input type="date" id="inpTgl" class="form-control form-control-sm"></div>
-      <div class="col-6 col-md-3"><select id="inpNama" class="form-select form-select-sm"></select></div>
-      <div class="col-6 col-md-2"><input type="number" id="inpMasuk" class="form-control form-control-sm" placeholder="M"></div>
-      <div class="col-6 col-md-2"><input type="number" id="inpKeluar" class="form-control form-control-sm" placeholder="K"></div>
-      <div class="col-12 col-md-2"><button class="btn btn-primary btn-sm w-100 fw-bold" id="btnSimpan" onclick="konfirmasi()">Simpan</button></div>
-    </div>
-  </div>
-
-  <div class="card-custom p-0 overflow-hidden shadow-sm bg-white">
-    <div class="table-responsive">
-      <table class="table table-sm table-striped align-middle mb-0 text-center">
-        <thead>
-          <tr>
-            <th style="width: 5%">No</th>
-            <th style="width: 15%">Tanggal</th>
-            <th style="width: 35%">Nama</th>
-            <th style="width: 15%">M</th>
-            <th style="width: 15%">K</th>
-            <th style="width: 15%">Saldo</th>
-          </tr>
-        </thead>
-        <tbody id="isiTabel">
-          <tr><td colspan="6" class="py-5 text-muted">Memuat data...</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="print-only mt-5 px-4 mb-4">
-      <div class="text-end mb-4">Tangerang, <span id="tglSekarang"></span></div>
-      <div class="row text-center">
-        <div class="col-6">
-          <p>Mengetahui,<br><b>Ibu RT 07</b></p>
-          <div style="height: 70px;"></div>
-          <p><b>( Emil Jamilah )</b></p>
-        </div>
-        <div class="col-6">
-          <p>Admin Tabungan RT 07</p>
-          <div style="height: 70px;"></div>
-          <p><b>( Sri Maryani )</b></p>
-        </div>
-      </div>
-    </div>
+  <div class="table-responsive bg-white shadow-sm rounded">
+    <table class="table table-sm table-striped text-center mb-0">
+      <thead class="table-dark"><tr><th>No</th><th>Tanggal</th><th>Nama</th><th>M</th><th>K</th><th>Saldo</th></tr></thead>
+      <tbody id="isiTabel"><tr><td colspan="6" class="p-4">Memuat data...</td></tr></tbody>
+    </table>
   </div>
 </div>
 
 <script>
+  // !!! GANTI DENGAN URL WEB APP GOOGLE ANDA !!!
+  const API_URL = "https://script.google.com/macros/s/AKfycbzBxMdL1MRtZld14eXlEno9MVJEkzawAlGJ14KPiXcjaFr1EAqwrqHx-kTZ22gMbCE/exec"; 
+
   let rawData = [];
-  
-  window.onload = function() {
-    loadData();
-    const d = new Date();
-    document.getElementById('tglSekarang').innerText = d.toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
-  };
+
+  window.onload = loadData;
 
   function loadData() {
-    google.script.run.withSuccessHandler(data => { rawData = data; render(data); }).getDataTabungan();
+    fetch(API_URL + "?action=read")
+      .then(r => r.json())
+      .then(d => { rawData = d; render(d); });
   }
 
-  function render(data) {
-    let html = "";
-    if (data.length === 0) {
-      html = "<tr><td colspan='6' class='py-3'>Belum ada data</td></tr>";
-    } else {
-      data.forEach((r, idx) => {
-        html += `<tr>
-          <td>${idx + 1}</td>
-          <td>${r[1]}</td>
-          <td class="text-start fw-bold text-uppercase">${r[2]}</td>
-          <td class="text-success">${Number(r[3]).toLocaleString('id-ID')}</td>
-          <td class="text-danger">${Number(r[4]).toLocaleString('id-ID')}</td>
-          <td class="fw-bold text-primary">${r[5]}</td>
-        </tr>`;
-      });
-    }
-    document.getElementById('isiTabel').innerHTML = html;
+  function render(d) {
+    let h = "";
+    d.forEach((r, i) => {
+      h += `<tr><td>${i+1}</td><td>${r[1]}</td><td class="text-start fw-bold">${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td></tr>`;
+    });
+    document.getElementById('isiTabel').innerHTML = h || "<tr><td colspan='6'>Data tidak ditemukan</td></tr>";
   }
 
-  function applyFilter() {
-    const thn = document.getElementById('fTahun').value;
-    const bln = document.getElementById('fBulan').value;
-    let filtered = rawData.filter(row => (thn === "" || row[1].includes(thn)) && (bln === "" || row[1].includes(bln)));
-    render(filtered);
+  function filterData() {
+    const t = document.getElementById('fTahun').value;
+    const b = document.getElementById('fBulan').value;
+    return rawData.filter(r => (t === "" || r[1].includes(t)) && (b === "" || r[1].includes(b)));
   }
 
   function promptLogin() {
-    let u = prompt("Username Admin:"), p = prompt("Password Admin:");
-    google.script.run.withSuccessHandler(res => {
-      if(res) {
-        document.getElementById('adminArea').classList.remove('d-none');
-        document.getElementById('btnLogout').classList.remove('d-none');
-        document.getElementById('btnLogin').classList.add('d-none');
-        google.script.run.withSuccessHandler(list => {
-          let s = document.getElementById('inpNama');
-          s.innerHTML = '<option value="">Pilih Nama...</option>';
-          list.forEach(n => s.innerHTML += `<option value="${n}">${n}</option>`);
-        }).getDaftarNama();
-      } else { alert("Akses Ditolak!"); }
-    }).cekAdminLogin(u, p);
+    const u = prompt("User:"), p = prompt("Pass:");
+    if(u === "TabunganRT" && p === "Bumiindah07") {
+      document.getElementById('adminArea').classList.remove('d-none');
+      fetch(API_URL + "?action=names").then(r => r.json()).then(l => {
+        let s = document.getElementById('inpNama');
+        s.innerHTML = l.map(n => `<option value="${n}">${n}</option>`).join('');
+      });
+    } else alert("Salah!");
   }
 
-  function konfirmasi() {
-    const n = document.getElementById('inpNama').value;
-    const m = document.getElementById('inpMasuk').value || 0;
-    const k = document.getElementById('inpKeluar').value || 0;
-    if(!n) return alert("Pilih Nama!");
-    
-    const konf = confirm(`PERIKSA KEMBALI:\nNama: ${n}\nMasuk: Rp ${Number(m).toLocaleString('id-ID')}\nKeluar: Rp ${Number(k).toLocaleString('id-ID')}\n\nSimpan data ini?`);
-    if(konf) {
-      document.getElementById('btnSimpan').disabled = true;
-      google.script.run.withSuccessHandler(msg => {
-        alert(msg); loadData(); document.getElementById('btnSimpan').disabled = false;
-        document.getElementById('inpMasuk').value = ""; document.getElementById('inpKeluar').value = "";
-      }).simpanTabungan({tanggal: document.getElementById('inpTgl').value, nama: n, masuk: m, keluar: k});
-    }
+  function simpan() {
+    const d = {
+      tanggal: document.getElementById('inpTgl').value,
+      nama: document.getElementById('inpNama').value,
+      masuk: document.getElementById('inpMasuk').value,
+      keluar: document.getElementById('inpKeluar').value
+    };
+    fetch(API_URL, { method: "POST", body: JSON.stringify(d) })
+      .then(r => r.text()).then(m => { alert(m); loadData(); });
   }
 </script>
 </body>
