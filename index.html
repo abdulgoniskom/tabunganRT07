@@ -126,11 +126,20 @@
     if(!data || data.length === 0) {
       h = "<tr><td colspan='6' class='p-4'>Data tidak ditemukan</td></tr>";
     } else {
-      let saldoPerOrang = {}; 
+      let saldoPerOrang = {}; // Dompet virtual tiap warga
+
+      // Fungsi pembantu lokal untuk format di tabel index
+      const formatIndex = (angka) => {
+        const num = parseFloat(angka) || 0;
+        if (num === 0) return "-";
+        return "Rp " + num.toLocaleString('id-ID');
+      };
+
       data.forEach((r, i) => {
         let nama = r[2].toUpperCase();
         let masuk = parseFloat(r[3]) || 0;
         let keluar = parseFloat(r[4]) || 0;
+
         if (!saldoPerOrang[nama]) saldoPerOrang[nama] = 0;
         saldoPerOrang[nama] += (masuk - keluar);
 
@@ -138,15 +147,14 @@
           <td>${i+1}</td>
           <td style="font-size:9px">${r[1]}</td>
           <td class="text-start nama-warga text-uppercase">${r[2]}</td>
-          <td class="nominal-m">${masuk.toLocaleString('id-ID')}</td>
-          <td class="nominal-k">${keluar.toLocaleString('id-ID')}</td>
-          <td class="fw-bold text-primary">${saldoPerOrang[nama].toLocaleString('id-ID')}</td>
+          <td class="nominal-m">${formatIndex(masuk)}</td>
+          <td class="nominal-k">${formatIndex(keluar)}</td>
+          <td class="fw-bold text-primary">Rp ${saldoPerOrang[nama].toLocaleString('id-ID')}</td>
         </tr>`;
       });
     }
     document.getElementById('isiTabel').innerHTML = h;
   }
-
   function applyFilter() {
     const t = document.getElementById('fTahun').value;
     const b = document.getElementById('fBulan').value;
@@ -169,7 +177,7 @@
     const filterTahun = document.getElementById('fTahun').value || "Semua Tahun";
     const filterBulan = document.getElementById('fBulan').options[document.getElementById('fBulan').selectedIndex].text;
 
-    // 1. Hitung Totalan dulu
+    // 1. Hitung Totalan
     let totalMasuk = 0;
     let totalKeluar = 0;
     filteredData.forEach(row => {
@@ -190,16 +198,29 @@
     doc.text(`Tanggal Cetak : ${tglCetak}`, 195, 30, { align: "right" });
     doc.line(15, 33, 195, 33); 
 
-    // 3. Buat Tabel (Cara Manual agar Totalan Pasti Muncul)
-    const tableBody = filteredData.map((r, i) => [
-      i + 1, 
-      r[1], 
-      r[2].toUpperCase(), 
-      parseFloat(r[3]).toLocaleString('id-ID'), 
-      parseFloat(r[4]).toLocaleString('id-ID'),
-      // Saldo di PDF kita kosongkan atau isi "-" karena totalan ada di bawah
-      "" 
-    ]);
+    // Fungsi pembantu untuk format Rp dan Strip
+    const formatRupiah = (angka) => {
+      const num = parseFloat(angka) || 0;
+      if (num === 0) return "-";
+      return "Rp " + num.toLocaleString('id-ID');
+    };
+
+    // 3. Susun Data Tabel
+    let saldoJalan = 0;
+    const tableBody = filteredData.map((r, i) => {
+      const masuk = parseFloat(r[3]) || 0;
+      const keluar = parseFloat(r[4]) || 0;
+      saldoJalan += (masuk - keluar);
+
+      return [
+        i + 1, 
+        r[1], 
+        r[2].toUpperCase(), 
+        formatRupiah(masuk), 
+        formatRupiah(keluar),
+        "Rp " + saldoJalan.toLocaleString('id-ID')
+      ];
+    });
 
     doc.autoTable({
       head: [['No', 'Tanggal', 'Nama Warga', 'Masuk', 'Keluar', 'Saldo']],
@@ -207,16 +228,17 @@
       startY: 38,
       theme: 'grid',
       headStyles: { fillColor: [26, 42, 58], halign: 'center' },
-      columnStyles: { 0: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' } },
-      
-      // INI JURUSNYA: Kita buat footer manual di dalam autoTable
-      didDrawPage: function (data) {
-        // Biarkan kosong
+      styles: { fontSize: 8 },
+      columnStyles: { 
+        0: { halign: 'center' }, 
+        3: { halign: 'right' }, 
+        4: { halign: 'right' }, 
+        5: { halign: 'right' } 
       },
       foot: [
-        [{ content: 'TOTAL MASUK', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, { content: totalMasuk.toLocaleString('id-ID'), styles: { halign: 'right' } }],
-        [{ content: 'TOTAL KELUAR', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, { content: totalKeluar.toLocaleString('id-ID'), styles: { halign: 'right' } }],
-        [{ content: 'TOTAL SALDO AKHIR', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, { content: saldoAkhir.toLocaleString('id-ID'), styles: { halign: 'right', fillColor: [243, 156, 18] } }]
+        [{ content: 'TOTAL MASUK', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, { content: "Rp " + totalMasuk.toLocaleString('id-ID'), styles: { halign: 'right' } }],
+        [{ content: 'TOTAL KELUAR', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, { content: "Rp " + totalKeluar.toLocaleString('id-ID'), styles: { halign: 'right' } }],
+        [{ content: 'TOTAL SALDO AKHIR', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, { content: "Rp " + saldoAkhir.toLocaleString('id-ID'), styles: { halign: 'right', fillColor: [243, 156, 18], textColor: [0, 0, 0] } }]
       ]
     });
 
