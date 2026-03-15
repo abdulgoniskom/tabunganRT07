@@ -172,7 +172,7 @@
     const filterTahun = document.getElementById('fTahun').value || "Semua Tahun";
     const filterBulan = document.getElementById('fBulan').options[document.getElementById('fBulan').selectedIndex].text;
 
-    // Logika Hitung Total
+    // Logika Hitung Totalan
     let totalMasuk = 0;
     let totalKeluar = 0;
     filteredData.forEach(row => {
@@ -188,11 +188,11 @@
     
     doc.setFontSize(10);
     doc.setFont(undefined, 'normal');
-    doc.text(`Nama Nasabah : ${filterNama ? filterNama.toUpperCase() : 'Semua Warga'}`, 15, 25);
+    doc.text(`Nama Nasabah : ${filterNama ? filterNama.toUpperCase() : 'SEMUA WARGA'}`, 15, 25);
     doc.text(`Periode Laporan : ${filterBulan} ${filterTahun}`, 15, 30);
     doc.text(`Tanggal Cetak : ${tglCetak}`, 195, 30, { align: "right" });
     
-    doc.line(15, 33, 195, 33); // Garis Pembatas
+    doc.line(15, 33, 195, 33); 
 
     // --- TABEL DATA ---
     doc.autoTable({
@@ -203,17 +203,24 @@
       styles: { fontSize: 8 },
       columnStyles: { 0: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' } },
       
-      // Baris Total Saldo di Bawah Tabel
-      foot: [[
-        { content: 'TOTAL SALDO TABUNGAN', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } },
-        { content: saldoAkhir.toLocaleString('id-ID'), styles: { halign: 'right', fontStyle: 'bold', fillColor: [243, 156, 18], textColor: [0, 0, 0] } }
-      ]],
-      footStyles: { fillColor: [230, 230, 230] }
+      // REVISI: Penambahan 3 baris totalan di bawah tabel
+      foot: [
+        [{ content: 'TOTAL SALDO MASUK', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, 
+         { content: totalMasuk.toLocaleString('id-ID'), styles: { halign: 'right', fontStyle: 'bold' } }],
+        
+        [{ content: 'TOTAL SALDO KELUAR', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, 
+         { content: totalKeluar.toLocaleString('id-ID'), styles: { halign: 'right', fontStyle: 'bold' } }],
+        
+        [{ content: 'TOTAL SALDO AKHIR', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, 
+         { content: saldoAkhir.toLocaleString('id-ID'), styles: { halign: 'right', fontStyle: 'bold', fillColor: [243, 156, 18], textColor: [0, 0, 0] } }]
+      ],
+      footStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0] }
     });
 
     // --- TANDA TANGAN ---
     const finalY = doc.lastAutoTable.finalY + 15;
     doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
     doc.text("Tangerang, " + tglCetak, 150, finalY);
     doc.text("Ibu RT 07,", 40, finalY + 10);
     doc.text("Bendahara Tabungan,", 150, finalY + 10);
@@ -222,7 +229,7 @@
     doc.text("( Emil Jamilah )", 40, finalY + 35);
     doc.text("( Sri Maryani )", 150, finalY + 35);
 
-    // Penamaan File Otomatis
+    // Penamaan File
     const namaFile = `Laporan_${filterNama || 'RT07'}_${filterBulan}_${filterTahun}.pdf`;
     doc.save(namaFile);
   }
