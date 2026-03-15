@@ -169,6 +169,7 @@
     const filterTahun = document.getElementById('fTahun').value || "Semua Tahun";
     const filterBulan = document.getElementById('fBulan').options[document.getElementById('fBulan').selectedIndex].text;
 
+    // 1. Hitung Totalan dulu
     let totalMasuk = 0;
     let totalKeluar = 0;
     filteredData.forEach(row => {
@@ -177,6 +178,7 @@
     });
     const saldoAkhir = totalMasuk - totalKeluar;
 
+    // 2. Header PDF
     doc.setFontSize(14);
     doc.setFont(undefined, 'bold');
     doc.text("LAPORAN TABUNGAN RT 07 - BUMI INDAH", 105, 15, { align: "center" });
@@ -186,31 +188,39 @@
     doc.text(`Nama Nasabah : ${filterNama ? filterNama.toUpperCase() : 'SEMUA WARGA'}`, 15, 25);
     doc.text(`Periode Laporan : ${filterBulan} ${filterTahun}`, 15, 30);
     doc.text(`Tanggal Cetak : ${tglCetak}`, 195, 30, { align: "right" });
-    
     doc.line(15, 33, 195, 33); 
 
+    // 3. Buat Tabel (Cara Manual agar Totalan Pasti Muncul)
+    const tableBody = filteredData.map((r, i) => [
+      i + 1, 
+      r[1], 
+      r[2].toUpperCase(), 
+      parseFloat(r[3]).toLocaleString('id-ID'), 
+      parseFloat(r[4]).toLocaleString('id-ID'),
+      // Saldo di PDF kita kosongkan atau isi "-" karena totalan ada di bawah
+      "" 
+    ]);
+
     doc.autoTable({
-      html: '#tabelTabungan',
+      head: [['No', 'Tanggal', 'Nama Warga', 'Masuk', 'Keluar', 'Saldo']],
+      body: tableBody,
       startY: 38,
       theme: 'grid',
       headStyles: { fillColor: [26, 42, 58], halign: 'center' },
-      styles: { fontSize: 8 },
       columnStyles: { 0: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' } },
       
-      // PAKSA ISI FOOTER DI SINI
+      // INI JURUSNYA: Kita buat footer manual di dalam autoTable
+      didDrawPage: function (data) {
+        // Biarkan kosong
+      },
       foot: [
-        [{ content: 'TOTAL MASUK', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, 
-         { content: totalMasuk.toLocaleString('id-ID'), styles: { halign: 'right', fontStyle: 'bold' } }],
-        
-        [{ content: 'TOTAL KELUAR', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, 
-         { content: totalKeluar.toLocaleString('id-ID'), styles: { halign: 'right', fontStyle: 'bold' } }],
-        
-        [{ content: 'TOTAL SALDO AKHIR', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, 
-         { content: saldoAkhir.toLocaleString('id-ID'), styles: { halign: 'right', fontStyle: 'bold', fillColor: [243, 156, 18], textColor: [0, 0, 0] } }]
-      ],
-      footStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0] }
+        [{ content: 'TOTAL MASUK', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, { content: totalMasuk.toLocaleString('id-ID'), styles: { halign: 'right' } }],
+        [{ content: 'TOTAL KELUAR', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, { content: totalKeluar.toLocaleString('id-ID'), styles: { halign: 'right' } }],
+        [{ content: 'TOTAL SALDO AKHIR', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, { content: saldoAkhir.toLocaleString('id-ID'), styles: { halign: 'right', fillColor: [243, 156, 18] } }]
+      ]
     });
 
+    // 4. Tanda Tangan
     const finalY = doc.lastAutoTable.finalY + 15;
     doc.setFontSize(10);
     doc.text("Tangerang, " + tglCetak, 150, finalY);
@@ -220,8 +230,7 @@
     doc.text("( Emil Jamilah )", 40, finalY + 35);
     doc.text("( Sri Maryani )", 150, finalY + 35);
 
-    const namaFile = `Laporan_${filterNama || 'RT07'}_${filterBulan}_${filterTahun}.pdf`;
-    doc.save(namaFile);
+    doc.save(`Laporan_${filterNama || 'RT07'}.pdf`);
   }
 
   function promptLogin() {
