@@ -5,147 +5,129 @@
   <base target="_top">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body { background-color: #f4f7f6; font-family: 'Segoe UI', sans-serif; font-size: 12px; }
-    .header-rt { background: #1a2a3a; color: white; padding: 20px; border-bottom: 5px solid #f39c12; }
-    .card-custom { background: white; border-radius: 10px; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; font-size: 13px; }
+    .header-rt { background: #1a2a3a; color: white; padding: 25px 15px; border-bottom: 5px solid #f39c12; }
+    .card-custom { background: white; border-radius: 10px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
     
-    /* Pengaturan Tabel Agar Tidak Luber */
-    .table-responsive { width: 100%; }
-    .table { width: 100%; border-collapse: collapse; }
-    .table thead th { background-color: #2c3e50; color: white; border: 1px solid #dee2e6; }
-
-    /* Footer Tanda Tangan */
-    .print-footer { display: none; margin-top: 30px; }
-    .signature-box { text-align: center; }
-
+    /* Pengaturan Cetak */
+    .print-only { display: none; }
     @media print {
-      @page { size: portrait; margin: 1cm; }
       .no-print { display: none !important; }
-      body { background: white; padding: 0; }
-      .header-rt { color: black; background: white; border-bottom: 2px solid black; padding: 10px; }
-      .card-custom { box-shadow: none; border: none; padding: 0; }
-      .table { font-size: 10px; border: 1px solid #000; }
-      .table thead th { background-color: #f0f0f0 !important; color: black !important; border: 1px solid #000; }
-      .table td { border: 1px solid #000; }
-      .print-footer { display: block; }
+      .print-only { display: block; }
+      body { background: white; }
+      .card-custom { box-shadow: none; border: none; margin-top: 0; }
+      .table { font-size: 11px; width: 100% !important; border: 1px solid #000; }
+      .table th, .table td { border: 1px solid #000 !important; }
+      .header-rt { color: black; background: white; border-bottom: 2px solid black; }
     }
+    
+    .table thead th { background-color: #2c3e50; color: white; text-align: center; }
   </style>
 </head>
 <body>
 
-<div class="container-fluid p-0 mb-5">
-  <div class="header-rt text-center shadow-sm">
-    <h4 class="fw-bold mb-1">LAPORAN TABUNGAN RT 07</h4>
-    <p class="mb-2 small">Perumahan Bumi Indah - Tangerang</p>
-    
-    <div class="no-print d-flex justify-content-center gap-2 mt-2">
-      <button class="btn btn-sm btn-outline-light" id="btnLogin" onclick="promptLogin()">Login Admin</button>
-      <button class="btn btn-sm btn-warning fw-bold" onclick="window.print()">CETAK LAPORAN</button>
-      <button class="btn btn-sm btn-danger d-none" id="btnLogout" onclick="location.reload()">Logout</button>
+<div class="header-rt text-center shadow-sm">
+  <h3 class="fw-bold mb-1">LAPORAN TABUNGAN RT 07</h3>
+  <p class="mb-3 small">Transparansi Keuangan Warga - Bumi Indah</p>
+  
+  <div class="no-print d-flex justify-content-center gap-2">
+    <button class="btn btn-sm btn-outline-light" id="btnLogin" onclick="promptLogin()">Login Admin</button>
+    <button class="btn btn-sm btn-warning fw-bold" onclick="window.print()">Cetak PDF</button>
+    <button class="btn btn-sm btn-danger d-none" id="btnLogout" onclick="location.reload()">Logout</button>
+  </div>
+</div>
+
+<div class="container mt-4">
+  <div class="card-custom mb-3 no-print border-0 bg-white">
+    <div class="row g-2">
+      <div class="col-6 col-md-5">
+        <label class="small fw-bold">Pilih Tahun</label>
+        <select id="fTahun" class="form-select form-select-sm" onchange="applyFilter()">
+          <option value="">Semua Tahun</option>
+          <option value="2025">2025</option>
+          <option value="2026">2026</option>
+        </select>
+      </div>
+      <div class="col-6 col-md-5">
+        <label class="small fw-bold">Pilih Bulan</label>
+        <select id="fBulan" class="form-select form-select-sm" onchange="applyFilter()">
+          <option value="">Semua Bulan</option>
+          <option value="-01-">Januari</option><option value="-02-">Februari</option>
+          <option value="-03-">Maret</option><option value="-04-">April</option>
+          <option value="-05-">Mei</option><option value="-06-">Juni</option>
+          <option value="-07-">Juli</option><option value="-08-">Agustus</option>
+          <option value="-09-">September</option><option value="-10-">Oktober</option>
+          <option value="-11-">November</option><option value="-12-">Desember</option>
+        </select>
+      </div>
     </div>
   </div>
 
-  <div class="container mt-3">
-    <div class="card-custom mb-3 no-print bg-light border">
-      <div class="row g-2">
-        <div class="col-6">
-          <label class="small fw-bold">Pilih Tahun</label>
-          <select id="fTahun" class="form-select form-select-sm" onchange="applyFilter()">
-            <option value="">Semua Tahun</option>
-            <option value="2024">2024</option>
-            <option value="2025">2025</option>
-            <option value="2026">2026</option>
-          </select>
-        </div>
-        <div class="col-6">
-          <label class="small fw-bold">Pilih Bulan</label>
-          <select id="fBulan" class="form-select form-select-sm" onchange="applyFilter()">
-            <option value="">Semua Bulan</option>
-            <option value="-01-">Januari</option>
-            <option value="-02-">Februari</option>
-            <option value="-03-">Maret</option>
-            <option value="-04-">April</option>
-            <option value="-05-">Mei</option>
-            <option value="-06-">Juni</option>
-            <option value="-07-">Juli</option>
-            <option value="-08-">Agustus</option>
-            <option value="-09-">September</option>
-            <option value="-10-">Oktober</option>
-            <option value="-11-">November</option>
-            <option value="-12-">Desember</option>
-          </select>
-        </div>
-      </div>
+  <div id="adminArea" class="card-custom d-none no-print mb-4 border-start border-4 border-primary">
+    <h6 class="fw-bold text-primary mb-3">Tambah Transaksi</h6>
+    <div class="row g-2">
+      <div class="col-6 col-md-3"><input type="date" id="inpTgl" class="form-control form-control-sm"></div>
+      <div class="col-6 col-md-3"><select id="inpNama" class="form-select form-select-sm"></select></div>
+      <div class="col-6 col-md-2"><input type="number" id="inpMasuk" class="form-control form-control-sm" placeholder="M"></div>
+      <div class="col-6 col-md-2"><input type="number" id="inpKeluar" class="form-control form-control-sm" placeholder="K"></div>
+      <div class="col-12 col-md-2"><button class="btn btn-primary btn-sm w-100 fw-bold" id="btnSimpan" onclick="konfirmasi()">Simpan</button></div>
+    </div>
+  </div>
+
+  <div class="card-custom p-0 overflow-hidden shadow-sm bg-white">
+    <div class="table-responsive">
+      <table class="table table-sm table-striped align-middle mb-0 text-center">
+        <thead>
+          <tr>
+            <th style="width: 5%">No</th>
+            <th style="width: 15%">Tanggal</th>
+            <th style="width: 35%">Nama</th>
+            <th style="width: 15%">M</th>
+            <th style="width: 15%">K</th>
+            <th style="width: 15%">Saldo</th>
+          </tr>
+        </thead>
+        <tbody id="isiTabel">
+          <tr><td colspan="6" class="py-5 text-muted">Memuat data...</td></tr>
+        </tbody>
+      </table>
     </div>
 
-    <div id="adminArea" class="card-custom d-none no-print mb-4 border-start border-4 border-primary">
-      <h6 class="fw-bold text-primary mb-3">Input Transaksi</h6>
-      <div class="row g-2">
-        <div class="col-6 col-md-3"><input type="date" id="inpTgl" class="form-control form-control-sm"></div>
-        <div class="col-6 col-md-3"><select id="inpNama" class="form-select form-select-sm"></select></div>
-        <div class="col-6 col-md-2"><input type="number" id="inpMasuk" class="form-control form-control-sm" placeholder="M"></div>
-        <div class="col-6 col-md-2"><input type="number" id="inpKeluar" class="form-control form-control-sm" placeholder="K"></div>
-        <div class="col-12 col-md-2"><button class="btn btn-primary btn-sm w-100 fw-bold" id="btnSimpan" onclick="konfirmasiSimpan()">Simpan</button></div>
-      </div>
-    </div>
-
-    <div class="card-custom shadow-sm p-2">
-      <div class="table-responsive">
-        <table class="table table-sm table-striped align-middle mb-0 text-center">
-          <thead>
-            <tr>
-              <th style="width: 5%">No</th>
-              <th style="width: 15%">Tanggal</th>
-              <th style="width: 40%">Nama Nasabah</th>
-              <th style="width: 13%">M</th>
-              <th style="width: 13%">K</th>
-              <th style="width: 14%">Saldo</th>
-            </tr>
-          </thead>
-          <tbody id="isiTabel">
-            <tr><td colspan="6" class="py-4 text-muted">Memuat data...</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="print-footer">
-        <div class="text-end mb-4">Tangerang, <span id="tglCetak"></span></div>
-        <div class="row">
-          <div class="col-6 signature-box">
-            <p class="mb-5">Mengetahui,<br><b>Ibu RT 07</b></p>
-            <p class="mt-4"><b>( Emil Jamilah )</b></p>
-          </div>
-          <div class="col-6 signature-box">
-            <p class="mb-5">Admin Tabungan RT 07</p>
-            <p class="mt-4"><b>( Sri Maryani )</b></p>
-          </div>
+    <div class="print-only mt-5 px-4 mb-4">
+      <div class="text-end mb-4">Tangerang, <span id="tglSekarang"></span></div>
+      <div class="row text-center">
+        <div class="col-6">
+          <p>Mengetahui,<br><b>Ibu RT 07</b></p>
+          <div style="height: 70px;"></div>
+          <p><b>( Emil Jamilah )</b></p>
+        </div>
+        <div class="col-6">
+          <p>Admin Tabungan RT 07</p>
+          <div style="height: 70px;"></div>
+          <p><b>( Sri Maryani )</b></p>
         </div>
       </div>
-
     </div>
   </div>
 </div>
 
 <script>
-  let allData = [];
-
+  let rawData = [];
+  
   window.onload = function() {
     loadData();
-    const skrg = new Date();
-    document.getElementById('tglCetak').innerText = skrg.toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
+    const d = new Date();
+    document.getElementById('tglSekarang').innerText = d.toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
   };
 
   function loadData() {
-    google.script.run.withSuccessHandler(data => {
-      allData = data;
-      renderTable(data);
-    }).getDataTabungan();
+    google.script.run.withSuccessHandler(data => { rawData = data; render(data); }).getDataTabungan();
   }
 
-  function renderTable(data) {
+  function render(data) {
     let html = "";
     if (data.length === 0) {
-      html = "<tr><td colspan='6' class='py-3'>Tidak ada data ditemukan</td></tr>";
+      html = "<tr><td colspan='6' class='py-3'>Belum ada data</td></tr>";
     } else {
       data.forEach((r, idx) => {
         html += `<tr>
@@ -161,48 +143,42 @@
     document.getElementById('isiTabel').innerHTML = html;
   }
 
-  // FUNGSI FILTER UTAMA
   function applyFilter() {
     const thn = document.getElementById('fTahun').value;
     const bln = document.getElementById('fBulan').value;
-    
-    let filtered = allData.filter(row => {
-      const matchThn = thn === "" || row[1].includes(thn);
-      const matchBln = bln === "" || row[1].includes(bln);
-      return matchThn && matchBln;
-    });
-    renderTable(filtered);
+    let filtered = rawData.filter(row => (thn === "" || row[1].includes(thn)) && (bln === "" || row[1].includes(bln)));
+    render(filtered);
   }
 
   function promptLogin() {
-    let u = prompt("Username:");
-    let p = prompt("Password:");
+    let u = prompt("Username Admin:"), p = prompt("Password Admin:");
     google.script.run.withSuccessHandler(res => {
       if(res) {
         document.getElementById('adminArea').classList.remove('d-none');
         document.getElementById('btnLogout').classList.remove('d-none');
         document.getElementById('btnLogin').classList.add('d-none');
         google.script.run.withSuccessHandler(list => {
-          let sel = document.getElementById('inpNama');
-          sel.innerHTML = '<option value="">-- Pilih Nama --</option>';
-          list.forEach(n => sel.innerHTML += `<option value="${n}">${n}</option>`);
+          let s = document.getElementById('inpNama');
+          s.innerHTML = '<option value="">Pilih Nama...</option>';
+          list.forEach(n => s.innerHTML += `<option value="${n}">${n}</option>`);
         }).getDaftarNama();
-      } else { alert("Gagal!"); }
+      } else { alert("Akses Ditolak!"); }
     }).cekAdminLogin(u, p);
   }
 
-  function konfirmasiSimpan() {
-    const tgl = document.getElementById('inpTgl').value;
-    const nama = document.getElementById('inpNama').value;
+  function konfirmasi() {
+    const n = document.getElementById('inpNama').value;
     const m = document.getElementById('inpMasuk').value || 0;
     const k = document.getElementById('inpKeluar').value || 0;
-    if(!tgl || !nama) return alert("Lengkapi data!");
-    if(confirm(`Simpan data ${nama}?`)) {
+    if(!n) return alert("Pilih Nama!");
+    
+    const konf = confirm(`PERIKSA KEMBALI:\nNama: ${n}\nMasuk: Rp ${Number(m).toLocaleString('id-ID')}\nKeluar: Rp ${Number(k).toLocaleString('id-ID')}\n\nSimpan data ini?`);
+    if(konf) {
       document.getElementById('btnSimpan').disabled = true;
       google.script.run.withSuccessHandler(msg => {
         alert(msg); loadData(); document.getElementById('btnSimpan').disabled = false;
         document.getElementById('inpMasuk').value = ""; document.getElementById('inpKeluar').value = "";
-      }).simpanTabungan({tanggal: tgl, nama: nama, masuk: m, keluar: k});
+      }).simpanTabungan({tanggal: document.getElementById('inpTgl').value, nama: n, masuk: m, keluar: k});
     }
   }
 </script>
