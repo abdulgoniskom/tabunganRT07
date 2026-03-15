@@ -13,16 +13,17 @@
     .header-rt { background: #1a2a3a; color: white; padding: 25px 15px; border-bottom: 5px solid #f39c12; border-radius: 0 0 20px 20px; }
     .card-custom { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.03); margin-bottom: 15px; }
     .table-responsive { border-radius: 12px; overflow: hidden; }
-    .table thead th { background-color: #2c3e50; color: white; font-size: 10px; text-transform: uppercase; padding: 12px 5px; }
+    .table thead th { background-color: #2c3e50; color: white; font-size: 10px; text-transform: uppercase; }
     .table td { vertical-align: middle; padding: 10px 5px; border-bottom: 1px solid #eee; }
     .nama-warga { font-weight: bold; color: #333; font-size: 10px; }
+    .label-filter { font-size: 11px; font-weight: bold; color: #666; margin-bottom: 2px; display: block; }
   </style>
 </head>
 <body>
 
 <div class="header-rt text-center shadow">
   <h5 class="fw-bold mb-1">LAPORAN TABUNGAN RT 07</h5>
-  <p class="small mb-3 opacity-75">Bumi Indah - Laporan Saldo Warga</p>
+  <p class="small mb-3 opacity-75">Bumi Indah - Transparansi Saldo Warga</p>
   
   <div class="d-flex justify-content-center gap-2">
     <button class="btn btn-sm btn-outline-light px-3" id="btnLogin" onclick="promptLogin()">🔓 Admin</button>
@@ -34,19 +35,41 @@
 <div class="container mt-3">
   <div class="card-custom border">
     <div class="row g-2">
-      <div class="col-6"><select id="fTahun" class="form-select form-select-sm" onchange="applyFilter()"><option value="">Semua Tahun</option><option value="2025">2025</option><option value="2026">2026</option></select></div>
-      <div class="col-6"><select id="fBulan" class="form-select form-select-sm" onchange="applyFilter()"><option value="">Semua Bulan</option><option value="-01-">Januari</option><option value="-02-">Februari</option><option value="-03-">Maret</option><option value="-04-">April</option><option value="-05-">Mei</option><option value="-06-">Juni</option><option value="-07-">Juli</option><option value="-08-">Agustus</option><option value="-09-">September</option><option value="-10-">Oktober</option><option value="-11-">November</option><option value="-12-">Desember</option></select></div>
+      <div class="col-4">
+        <label class="label-filter">Tahun</label>
+        <select id="fTahun" class="form-select form-select-sm" onchange="applyFilter()">
+          <option value="">Semua</option>
+          <option value="2025">2025</option>
+          <option value="2026">2026</option>
+        </select>
+      </div>
+      <div class="col-4">
+        <label class="label-filter">Bulan</label>
+        <select id="fBulan" class="form-select form-select-sm" onchange="applyFilter()">
+          <option value="">Semua</option>
+          <option value="-01-">Jan</option><option value="-02-">Feb</option><option value="-03-">Mar</option>
+          <option value="-04-">Apr</option><option value="-05-">Mei</option><option value="-06-">Jun</option>
+          <option value="-07-">Jul</option><option value="-08-">Agu</option><option value="-09-">Sep</option>
+          <option value="-10-">Okt</option><option value="-11-">Nov</option><option value="-12-">Des</option>
+        </select>
+      </div>
+      <div class="col-4">
+        <label class="label-filter">Nama Warga</label>
+        <select id="fNama" class="form-select form-select-sm" onchange="applyFilter()">
+          <option value="">Semua Nama</option>
+        </select>
+      </div>
     </div>
   </div>
 
   <div id="adminArea" class="card-custom d-none border-start border-5 border-primary">
-    <h6 class="fw-bold text-primary mb-3 small">Tambah Data</h6>
+    <h6 class="fw-bold text-primary mb-3 small">Tambah Data Baru</h6>
     <div class="row g-2">
       <div class="col-12"><input type="date" id="inpTgl" class="form-control form-control-sm"></div>
       <div class="col-12"><select id="inpNama" class="form-select form-select-sm"></select></div>
       <div class="col-6"><input type="number" id="inpMasuk" class="form-control form-control-sm" placeholder="Masuk"></div>
       <div class="col-6"><input type="number" id="inpKeluar" class="form-control form-control-sm" placeholder="Keluar"></div>
-      <button class="btn btn-primary btn-sm w-100 mt-2 fw-bold" id="btnSimpan" onclick="simpanData()">SIMPAN</button>
+      <button class="btn btn-primary btn-sm w-100 mt-2 fw-bold" id="btnSimpan" onclick="simpanData()">SIMPAN DATA</button>
     </div>
   </div>
 
@@ -60,11 +83,11 @@
             <th>Nama Warga</th>
             <th>Masuk</th>
             <th>Keluar</th>
-            <th>Saldo Tabungan</th>
+            <th>Saldo</th>
           </tr>
         </thead>
         <tbody id="isiTabel">
-          <tr><td colspan="6" class="p-4 text-muted">Memuat data...</td></tr>
+          <tr><td colspan="6" class="p-4 text-muted">Sinkronisasi data...</td></tr>
         </tbody>
       </table>
     </div>
@@ -75,15 +98,29 @@
   const API_URL = "https://script.google.com/macros/s/AKfycbwU6oVnAA7bod9iTr1AQci49KygW2YGf4p-emSdr5BAyYZLKeyfLz6iURpj0UsYbQ/exec"; 
 
   let rawData = [];
+  let filteredData = [];
+
   window.onload = loadData;
 
   function loadData() {
-    fetch(API_URL + "?action=read").then(r => r.json()).then(d => { rawData = d; render(d); });
+    fetch(API_URL + "?action=read").then(r => r.json()).then(d => { 
+      rawData = d; 
+      filteredData = d;
+      render(d); 
+    });
+
+    fetch(API_URL + "?action=names").then(r => r.json()).then(l => {
+      const fNama = document.getElementById('fNama');
+      l.forEach(n => {
+        let opt = document.createElement('option');
+        opt.value = n; opt.innerHTML = n; fNama.appendChild(opt);
+      });
+    });
   }
 
   function render(data) {
     let h = "";
-    if(!data || data.length === 0) h = "<tr><td colspan='6'>Data Kosong</td></tr>";
+    if(!data || data.length === 0) h = "<tr><td colspan='6' class='p-4'>Data tidak ditemukan</td></tr>";
     else data.forEach((r, i) => {
       h += `<tr>
         <td>${i+1}</td>
@@ -100,39 +137,58 @@
   function applyFilter() {
     const t = document.getElementById('fTahun').value;
     const b = document.getElementById('fBulan').value;
-    const filtered = rawData.filter(r => (t === "" || r[1].includes(t)) && (b === "" || r[1].includes(b)));
-    render(filtered);
+    const n = document.getElementById('fNama').value.toLowerCase();
+    
+    filteredData = rawData.filter(r => 
+      (t === "" || r[1].includes(t)) && 
+      (b === "" || r[1].includes(b)) &&
+      (n === "" || r[2].toLowerCase() === n)
+    );
+    render(filteredData);
   }
 
-  // FUNGSI GENERATE PDF LANGSUNG DOWNLOAD
   function generatePDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('p', 'mm', 'a4');
     const tgl = new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
+    const filterNama = document.getElementById('fNama').value;
 
-    // Judul
-    doc.setFontSize(16);
+    // LOGIKA HITUNG SALDO AKHIR
+    let totalMasuk = 0;
+    let totalKeluar = 0;
+    filteredData.forEach(row => {
+      totalMasuk += parseFloat(row[3]) || 0;
+      totalKeluar += parseFloat(row[4]) || 0;
+    });
+    const saldoAkhir = totalMasuk - totalKeluar;
+
+    doc.setFontSize(14);
     doc.text("LAPORAN TABUNGAN RT 07 - BUMI INDAH", 105, 15, { align: "center" });
     doc.setFontSize(10);
-    doc.text("Laporan Transparansi Saldo Tabungan Warga", 105, 22, { align: "center" });
-    doc.line(15, 25, 195, 25); // Garis horisontal
+    const subJudul = filterNama ? `Laporan Riwayat Tabungan: ${filterNama.toUpperCase()}` : "Laporan Saldo Tabungan Keseluruhan";
+    doc.text(subJudul, 105, 21, { align: "center" });
+    doc.line(15, 24, 195, 24);
 
-    // Ambil Data Tabel
     doc.autoTable({
       html: '#tabelTabungan',
-      startY: 30,
+      startY: 28,
       theme: 'grid',
       headStyles: { fillColor: [26, 42, 58], halign: 'center' },
-      styles: { fontSize: 8, cellPadding: 2 },
-      columnStyles: {
-        0: { halign: 'center' },
-        3: { halign: 'right' },
-        4: { halign: 'right' },
-        5: { halign: 'right' }
-      }
+      styles: { fontSize: 8 },
+      columnStyles: { 0: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' } },
+      // TAMBAHKAN BARIS TOTAL DI BAWAH TABEL
+      didDrawPage: function (data) {
+        // Footer bisa diletakkan di sini jika perlu per halaman
+      },
+      foot: [[
+        { content: 'TOTAL KESELURUHAN', colSpan: 3, styles: { halign: 'right', fontStyle: 'bold' } },
+        { content: totalMasuk.toLocaleString('id-ID'), styles: { halign: 'right', fontStyle: 'bold' } },
+        { content: totalKeluar.toLocaleString('id-ID'), styles: { halign: 'right', fontStyle: 'bold' } },
+        { content: saldoAkhir.toLocaleString('id-ID'), styles: { halign: 'right', fontStyle: 'bold', fillColor: [243, 156, 18] } }
+      ]],
+      footStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0] }
     });
 
-    // Tanda Tangan
     const finalY = doc.lastAutoTable.finalY + 15;
     doc.text("Tangerang, " + tgl, 150, finalY);
     doc.text("Ibu RT 07,", 40, finalY + 10);
@@ -141,10 +197,11 @@
     doc.text("( Emil Jamilah )", 40, finalY + 35);
     doc.text("( Sri Maryani )", 150, finalY + 35);
 
-    // Langsung Download
-    doc.save(`Laporan_Tabungan_RT07_${tgl.replace(/ /g, '_')}.pdf`);
+    const namaFile = filterNama ? `Tabungan_${filterNama.replace(/ /g,'_')}.pdf` : `Laporan_Tabungan_RT07.pdf`;
+    doc.save(namaFile);
   }
 
+  // ... fungsi promptLogin & simpanData tetap sama seperti sebelumnya ...
   function promptLogin() {
     const u = prompt("User:"), p = prompt("Pass:");
     if(!u || !p) return;
