@@ -147,41 +147,49 @@
     render(filteredData);
   }
 
+  // --- BAGIAN FUNGSI GENERATE PDF YANG DIREVISI ---
   function generatePDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('p', 'mm', 'a4');
     const tgl = new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
     const filterNama = document.getElementById('fNama').value;
 
-    // LOGIKA HITUNG SALDO AKHIR
+    // PENTING: Gunakan filteredData (data yang sudah disaring), bukan rawData (data global)
     let totalMasuk = 0;
     let totalKeluar = 0;
+    
     filteredData.forEach(row => {
       totalMasuk += parseFloat(row[3]) || 0;
       totalKeluar += parseFloat(row[4]) || 0;
     });
     const saldoAkhir = totalMasuk - totalKeluar;
 
+    // Header PDF
     doc.setFontSize(14);
     doc.text("LAPORAN TABUNGAN RT 07 - BUMI INDAH", 105, 15, { align: "center" });
     doc.setFontSize(10);
+    
+    // Subjudul Dinamis
     const subJudul = filterNama ? `Laporan Riwayat Tabungan: ${filterNama.toUpperCase()}` : "Laporan Saldo Tabungan Keseluruhan";
     doc.text(subJudul, 105, 21, { align: "center" });
     doc.line(15, 24, 195, 24);
 
+    // Tabel
     doc.autoTable({
       html: '#tabelTabungan',
       startY: 28,
       theme: 'grid',
       headStyles: { fillColor: [26, 42, 58], halign: 'center' },
       styles: { fontSize: 8 },
-      columnStyles: { 0: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' } },
-      // TAMBAHKAN BARIS TOTAL DI BAWAH TABEL
-      didDrawPage: function (data) {
-        // Footer bisa diletakkan di sini jika perlu per halaman
+      columnStyles: { 
+        0: { halign: 'center' }, 
+        3: { halign: 'right' }, 
+        4: { halign: 'right' }, 
+        5: { halign: 'right' } 
       },
+      // Baris Totalan di bawah tabel PDF
       foot: [[
-        { content: 'TOTAL KESELURUHAN', colSpan: 3, styles: { halign: 'right', fontStyle: 'bold' } },
+        { content: filterNama ? `TOTAL TABUNGAN ${filterNama.toUpperCase()}` : 'TOTAL KESELURUHAN', colSpan: 3, styles: { halign: 'right', fontStyle: 'bold' } },
         { content: totalMasuk.toLocaleString('id-ID'), styles: { halign: 'right', fontStyle: 'bold' } },
         { content: totalKeluar.toLocaleString('id-ID'), styles: { halign: 'right', fontStyle: 'bold' } },
         { content: saldoAkhir.toLocaleString('id-ID'), styles: { halign: 'right', fontStyle: 'bold', fillColor: [243, 156, 18] } }
@@ -189,6 +197,7 @@
       footStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0] }
     });
 
+    // Tanda Tangan
     const finalY = doc.lastAutoTable.finalY + 15;
     doc.text("Tangerang, " + tgl, 150, finalY);
     doc.text("Ibu RT 07,", 40, finalY + 10);
@@ -200,7 +209,7 @@
     const namaFile = filterNama ? `Tabungan_${filterNama.replace(/ /g,'_')}.pdf` : `Laporan_Tabungan_RT07.pdf`;
     doc.save(namaFile);
   }
-
+  
   // ... fungsi promptLogin & simpanData tetap sama seperti sebelumnya ...
   function promptLogin() {
     const u = prompt("User:"), p = prompt("Pass:");
