@@ -2,98 +2,229 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tabungan RT 07 - Bumi Indah</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body { background-color: #f8f9fa; font-size: 13px; }
-    .header-rt { background: #1a2a3a; color: white; padding: 20px; border-bottom: 5px solid #f39c12; }
-    .table-responsive { font-size: 11px; }
-    @media print { .no-print { display: none !important; } .print-only { display: block !important; } }
+    body { background-color: #f4f7f6; font-size: 13px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    .header-rt { background: #1a2a3a; color: white; padding: 25px 15px; border-bottom: 5px solid #f39c12; border-radius: 0 0 20px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .card-custom { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.03); margin-bottom: 15px; border: none; }
+    .btn-login-outline { border: 1px solid rgba(255,255,255,0.5); color: white; background: transparent; transition: 0.3s; }
+    .btn-login-outline:hover { background: white; color: #1a2a3a; }
+    
+    /* Tabel HP Optimization */
+    .table-responsive { border-radius: 12px; overflow: hidden; border: 1px solid #eee; }
+    .table thead th { background-color: #2c3e50; color: white; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; border: none; }
+    .table td { vertical-align: middle; padding: 10px 5px; border-bottom: 1px solid #f8f9fa; }
+    .nama-warga { font-size: 10px; font-weight: bold; color: #333; }
+    .nominal-m { color: #27ae60; font-weight: 500; }
+    .nominal-k { color: #e74c3c; font-weight: 500; }
+
     .print-only { display: none; }
+    @media print {
+      .no-print { display: none !important; }
+      .print-only { display: block !important; margin-top: 20px; }
+      body { background: white; }
+      .table th, .table td { border: 1px solid #000 !important; color: black !important; }
+    }
   </style>
 </head>
 <body>
 
-<div class="header-rt text-center">
-  <h5 class="fw-bold">LAPORAN TABUNGAN RT 07</h5>
-  <div class="no-print d-flex justify-content-center gap-2 mt-2">
-    <button class="btn btn-sm btn-outline-light" onclick="promptLogin()">Admin</button>
-    <button class="btn btn-sm btn-warning" onclick="window.print()">Cetak</button>
+<div class="header-rt text-center shadow">
+  <h5 class="fw-bold mb-1">SISTEM INFORMASI RT 07</h5>
+  <p class="small mb-3 opacity-75">Laporan Transparansi Tabungan Warga</p>
+  
+  <div class="no-print d-flex justify-content-center gap-2">
+    <button class="btn btn-sm btn-login-outline px-4 shadow-sm" id="btnLogin" onclick="promptLogin()">
+       🔓 Login Admin
+    </button>
+    <button class="btn btn-sm btn-warning fw-bold px-3 shadow-sm" onclick="window.print()">
+       🖨️ Cetak Laporan
+    </button>
+    <button class="btn btn-sm btn-danger d-none" id="btnLogout" onclick="location.reload()">
+       🔒 Keluar
+    </button>
   </div>
 </div>
 
 <div class="container mt-3">
-  <div class="row g-2 mb-3 no-print">
-    <div class="col-6"><select id="fTahun" class="form-select form-select-sm" onchange="render(filterData())"><option value="">Semua Tahun</option><option value="2025">2025</option><option value="2026">2026</option></select></div>
-    <div class="col-6"><select id="fBulan" class="form-select form-select-sm" onchange="render(filterData())"><option value="">Semua Bulan</option><option value="-01-">Januari</option><option value="-02-">Februari</option><option value="-03-">Maret</option></select></div>
+  <div id="adminStatus" class="text-center mb-2 no-print small fw-bold text-success d-none">
+    ✅ Mode Admin Aktif
   </div>
 
-  <div id="adminArea" class="card p-3 mb-3 d-none no-print shadow-sm">
+  <div class="card-custom no-print border">
     <div class="row g-2">
-      <div class="col-6"><input type="date" id="inpTgl" class="form-control form-control-sm"></div>
-      <div class="col-6"><select id="inpNama" class="form-select form-select-sm"></select></div>
-      <div class="col-6"><input type="number" id="inpMasuk" class="form-control form-control-sm" placeholder="Masuk"></div>
-      <div class="col-6"><input type="number" id="inpKeluar" class="form-control form-control-sm" placeholder="Keluar"></div>
-      <button class="btn btn-primary btn-sm mt-2" onclick="simpan()">Simpan</button>
+      <div class="col-6">
+        <select id="fTahun" class="form-select form-select-sm" onchange="applyFilter()">
+          <option value="">Semua Tahun</option>
+          <option value="2025">2025</option>
+          <option value="2026">2026</option>
+        </select>
+      </div>
+      <div class="col-6">
+        <select id="fBulan" class="form-select form-select-sm" onchange="applyFilter()">
+          <option value="">Semua Bulan</option>
+          <option value="-01-">Januari</option><option value="-02-">Februari</option>
+          <option value="-03-">Maret</option><option value="-04-">April</option>
+          <option value="-05-">Mei</option><option value="-06-">Juni</option>
+          <option value="-07-">Juli</option><option value="-08-">Agustus</option>
+          <option value="-09-">September</option><option value="-10-">Oktober</option>
+          <option value="-11-">November</option><option value="-12-">Desember</option>
+        </select>
+      </div>
     </div>
   </div>
 
-  <div class="table-responsive bg-white shadow-sm rounded">
-    <table class="table table-sm table-striped text-center mb-0">
-      <thead class="table-dark"><tr><th>No</th><th>Tanggal</th><th>Nama</th><th>M</th><th>K</th><th>Saldo</th></tr></thead>
-      <tbody id="isiTabel"><tr><td colspan="6" class="p-4">Memuat data...</td></tr></tbody>
-    </table>
+  <div id="adminArea" class="card-custom d-none no-print border-start border-5 border-primary shadow">
+    <h6 class="fw-bold text-primary mb-3">Input Transaksi Baru</h6>
+    <div class="row g-2">
+      <div class="col-12"><label class="fw-bold small mb-1">Tanggal</label><input type="date" id="inpTgl" class="form-control form-control-sm"></div>
+      <div class="col-12"><label class="fw-bold small mb-1">Nama Warga</label><select id="inpNama" class="form-select form-select-sm"></select></div>
+      <div class="col-6"><label class="fw-bold small mb-1">Masuk (Rp)</label><input type="number" id="inpMasuk" class="form-control form-control-sm" placeholder="0"></div>
+      <div class="col-6"><label class="fw-bold small mb-1">Keluar (Rp)</label><input type="number" id="inpKeluar" class="form-control form-control-sm" placeholder="0"></div>
+      <div class="col-12 mt-3">
+        <button class="btn btn-primary btn-sm w-100 fw-bold shadow-sm" id="btnSimpan" onclick="simpanData()">SIMPAN DATA</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-custom p-0 overflow-hidden border shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-sm table-striped text-center mb-0 align-middle">
+        <thead>
+          <tr>
+            <th width="5%">No</th>
+            <th width="20%">Tanggal</th>
+            <th width="35%">Nama</th>
+            <th width="20%">M / K</th>
+            <th width="20%">Saldo</th>
+          </tr>
+        </thead>
+        <tbody id="isiTabel">
+          <tr><td colspan="5" class="p-5 text-muted">Sinkronisasi data Google Sheets...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="print-only p-4">
+      <div class="text-end mb-4 small">Tangerang, <span id="tglCetak"></span></div>
+      <div class="row text-center small">
+        <div class="col-6">
+          <p>Mengetahui,<br><b>Ibu RT 07</b><br><br><br><br><b>( Emil Jamilah )</b></p>
+        </div>
+        <div class="col-6">
+          <p>Admin Tabungan<br><b>RT 07</b><br><br><br><br><b>( Sri Maryani )</b></p>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
-  // !!! GANTI DENGAN URL WEB APP GOOGLE ANDA !!!
-  const API_URL = "https://script.google.com/macros/s/AKfycbzBxMdL1MRtZld14eXlEno9MVJEkzawAlGJ14KPiXcjaFr1EAqwrqHx-kTZ22gMbCE/exec"; 
+  // GANTI LINK DI BAWAH INI DENGAN LINK WEB APP (API) ANDA
+  const API_URL = "https://script.google.com/macros/s/AKfycbxdIRCpmHdnnFCj8Ouk32EAmNj4FdQmw5oaE5aaUuaKlfaOlw8hrpivlKBQfhh6E-I/exec"; 
 
   let rawData = [];
 
-  window.onload = loadData;
+  window.onload = () => {
+    loadData();
+    document.getElementById('tglCetak').innerText = new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
+  };
 
+  // 1. Fungsi Ambil Data (Public)
   function loadData() {
     fetch(API_URL + "?action=read")
       .then(r => r.json())
-      .then(d => { rawData = d; render(d); });
+      .then(d => { rawData = d; render(d); })
+      .catch(e => {
+        document.getElementById('isiTabel').innerHTML = "<tr><td colspan='5' class='text-danger p-4'>Gagal terhubung ke API.</td></tr>";
+      });
   }
 
-  function render(d) {
-    let h = "";
-    d.forEach((r, i) => {
-      h += `<tr><td>${i+1}</td><td>${r[1]}</td><td class="text-start fw-bold">${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td></tr>`;
-    });
-    document.getElementById('isiTabel').innerHTML = h || "<tr><td colspan='6'>Data tidak ditemukan</td></tr>";
+  // 2. Fungsi Render Tabel
+  function render(data) {
+    let html = "";
+    if(!data || data.length === 0) {
+      html = "<tr><td colspan='5' class='p-4'>Belum ada data transaksi.</td></tr>";
+    } else {
+      data.forEach((r, i) => {
+        html += `<tr>
+          <td>${i+1}</td>
+          <td style="font-size:9px">${r[1]}</td>
+          <td class="text-start nama-warga text-uppercase">${r[2]}</td>
+          <td>
+            <div class="nominal-m">${Number(r[3]).toLocaleString('id-ID')}</div>
+            <div class="nominal-k">${Number(r[4]).toLocaleString('id-ID')}</div>
+          </td>
+          <td class="fw-bold text-primary">${r[5]}</td>
+        </tr>`;
+      });
+    }
+    document.getElementById('isiTabel').innerHTML = html;
   }
 
-  function filterData() {
+  // 3. Fungsi Filter
+  function applyFilter() {
     const t = document.getElementById('fTahun').value;
     const b = document.getElementById('fBulan').value;
-    return rawData.filter(r => (t === "" || r[1].includes(t)) && (b === "" || r[1].includes(b)));
+    const filtered = rawData.filter(r => (t === "" || r[1].includes(t)) && (b === "" || r[1].includes(b)));
+    render(filtered);
   }
 
+  // 4. Fungsi Login (Keamanan Server-Side)
   function promptLogin() {
-    const u = prompt("User:"), p = prompt("Pass:");
-    if(u === "TabunganRT" && p === "Bumiindah07") {
-      document.getElementById('adminArea').classList.remove('d-none');
-      fetch(API_URL + "?action=names").then(r => r.json()).then(l => {
-        let s = document.getElementById('inpNama');
-        s.innerHTML = l.map(n => `<option value="${n}">${n}</option>`).join('');
-      });
-    } else alert("Salah!");
+    const u = prompt("Username Admin:");
+    const p = prompt("Password Admin:");
+    if(!u || !p) return;
+
+    fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "login", username: u, password: p })
+    })
+    .then(res => res.text())
+    .then(status => {
+      if(status === "SUCCESS") {
+        document.getElementById('adminArea').classList.remove('d-none');
+        document.getElementById('adminStatus').classList.remove('d-none');
+        document.getElementById('btnLogout').classList.remove('d-none');
+        document.getElementById('btnLogin').classList.add('d-none');
+        
+        // Ambil daftar nama warga jika login sukses
+        fetch(API_URL + "?action=names").then(r => r.json()).then(l => {
+          document.getElementById('inpNama').innerHTML = l.map(n => `<option value="${n}">${n}</option>`).join('');
+        });
+      } else {
+        alert("Akses Ditolak! Username/Password salah.");
+      }
+    });
   }
 
-  function simpan() {
+  // 5. Fungsi Simpan Data
+  function simpanData() {
     const d = {
+      action: "save",
       tanggal: document.getElementById('inpTgl').value,
       nama: document.getElementById('inpNama').value,
-      masuk: document.getElementById('inpMasuk').value,
-      keluar: document.getElementById('inpKeluar').value
+      masuk: document.getElementById('inpMasuk').value || 0,
+      keluar: document.getElementById('inpKeluar').value || 0
     };
-    fetch(API_URL, { method: "POST", body: JSON.stringify(d) })
-      .then(r => r.text()).then(m => { alert(m); loadData(); });
+
+    if(!d.tanggal || !d.nama) return alert("Mohon lengkapi Tanggal dan Nama!");
+
+    if(confirm(`Simpan transaksi Rp ${Number(d.masuk).toLocaleString('id-ID')} untuk ${d.nama}?`)) {
+      const btn = document.getElementById('btnSimpan');
+      btn.disabled = true;
+      btn.innerText = "Menyimpan...";
+
+      fetch(API_URL, { method: "POST", body: JSON.stringify(d) })
+        .then(r => r.text())
+        .then(msg => {
+          alert(msg);
+          location.reload();
+        })
+        .catch(err => alert("Gagal menyimpan data!"));
+    }
   }
 </script>
 </body>
