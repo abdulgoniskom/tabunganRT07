@@ -150,7 +150,7 @@
   }
 
   function promptLogin() {
-    const u = prompt("User:"), p = prompt("Pass:");
+    const u = prompt("Username"), p = prompt("Password:");
     if(!u || !p) return;
     fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "login", username: u, password: p }) })
     .then(res => res.text()).then(status => {
