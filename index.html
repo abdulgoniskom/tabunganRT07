@@ -17,6 +17,8 @@
     .table td { vertical-align: middle; padding: 10px 5px; border-bottom: 1px solid #eee; }
     .nama-warga { font-weight: bold; color: #333; font-size: 10px; }
     .label-filter { font-size: 11px; font-weight: bold; color: #666; margin-bottom: 2px; display: block; }
+    .nominal-m { color: #27ae60; font-weight: 500; }
+    .nominal-k { color: #e74c3c; font-weight: 500; }
   </style>
 </head>
 <body>
@@ -118,19 +120,32 @@
     });
   }
 
+  // REVISI: Logika render agar saldo terhitung per nama
   function render(data) {
     let h = "";
-    if(!data || data.length === 0) h = "<tr><td colspan='6' class='p-4'>Data tidak ditemukan</td></tr>";
-    else data.forEach((r, i) => {
-      h += `<tr>
-        <td>${i+1}</td>
-        <td style="font-size:9px">${r[1]}</td>
-        <td class="text-start nama-warga text-uppercase">${r[2]}</td>
-        <td class="text-success">${Number(r[3]).toLocaleString('id-ID')}</td>
-        <td class="text-danger">${Number(r[4]).toLocaleString('id-ID')}</td>
-        <td class="fw-bold text-primary">${r[5]}</td>
-      </tr>`;
-    });
+    if(!data || data.length === 0) {
+      h = "<tr><td colspan='6' class='p-4'>Data tidak ditemukan</td></tr>";
+    } else {
+      let saldoPerOrang = {}; // Dompet virtual tiap warga
+
+      data.forEach((r, i) => {
+        let nama = r[2].toUpperCase();
+        let masuk = parseFloat(r[3]) || 0;
+        let keluar = parseFloat(r[4]) || 0;
+
+        if (!saldoPerOrang[nama]) saldoPerOrang[nama] = 0;
+        saldoPerOrang[nama] += (masuk - keluar);
+
+        h += `<tr>
+          <td>${i+1}</td>
+          <td style="font-size:9px">${r[1]}</td>
+          <td class="text-start nama-warga text-uppercase">${r[2]}</td>
+          <td class="nominal-m">${masuk.toLocaleString('id-ID')}</td>
+          <td class="nominal-k">${keluar.toLocaleString('id-ID')}</td>
+          <td class="fw-bold text-primary">${saldoPerOrang[nama].toLocaleString('id-ID')}</td>
+        </tr>`;
+      });
+    }
     document.getElementById('isiTabel').innerHTML = h;
   }
 
@@ -147,47 +162,35 @@
     render(filteredData);
   }
 
-  // --- BAGIAN FUNGSI GENERATE PDF YANG DIREVISI ---
   function generatePDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('p', 'mm', 'a4');
     const tgl = new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
     const filterNama = document.getElementById('fNama').value;
 
-    // PENTING: Gunakan filteredData (data yang sudah disaring), bukan rawData (data global)
+    // Hitung Totalan hanya dari data yang sudah difilter
     let totalMasuk = 0;
     let totalKeluar = 0;
-    
     filteredData.forEach(row => {
       totalMasuk += parseFloat(row[3]) || 0;
       totalKeluar += parseFloat(row[4]) || 0;
     });
     const saldoAkhir = totalMasuk - totalKeluar;
 
-    // Header PDF
     doc.setFontSize(14);
     doc.text("LAPORAN TABUNGAN RT 07 - BUMI INDAH", 105, 15, { align: "center" });
     doc.setFontSize(10);
-    
-    // Subjudul Dinamis
     const subJudul = filterNama ? `Laporan Riwayat Tabungan: ${filterNama.toUpperCase()}` : "Laporan Saldo Tabungan Keseluruhan";
     doc.text(subJudul, 105, 21, { align: "center" });
     doc.line(15, 24, 195, 24);
 
-    // Tabel
     doc.autoTable({
       html: '#tabelTabungan',
       startY: 28,
       theme: 'grid',
       headStyles: { fillColor: [26, 42, 58], halign: 'center' },
       styles: { fontSize: 8 },
-      columnStyles: { 
-        0: { halign: 'center' }, 
-        3: { halign: 'right' }, 
-        4: { halign: 'right' }, 
-        5: { halign: 'right' } 
-      },
-      // Baris Totalan di bawah tabel PDF
+      columnStyles: { 0: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' } },
       foot: [[
         { content: filterNama ? `TOTAL TABUNGAN ${filterNama.toUpperCase()}` : 'TOTAL KESELURUHAN', colSpan: 3, styles: { halign: 'right', fontStyle: 'bold' } },
         { content: totalMasuk.toLocaleString('id-ID'), styles: { halign: 'right', fontStyle: 'bold' } },
@@ -197,7 +200,6 @@
       footStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0] }
     });
 
-    // Tanda Tangan
     const finalY = doc.lastAutoTable.finalY + 15;
     doc.text("Tangerang, " + tgl, 150, finalY);
     doc.text("Ibu RT 07,", 40, finalY + 10);
@@ -209,8 +211,7 @@
     const namaFile = filterNama ? `Tabungan_${filterNama.replace(/ /g,'_')}.pdf` : `Laporan_Tabungan_RT07.pdf`;
     doc.save(namaFile);
   }
-  
-  // ... fungsi promptLogin & simpanData tetap sama seperti sebelumnya ...
+
   function promptLogin() {
     const u = prompt("User:"), p = prompt("Pass:");
     if(!u || !p) return;
