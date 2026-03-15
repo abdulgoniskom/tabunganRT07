@@ -249,7 +249,8 @@
     });
   }
 
-  function simpanData() {
+ function simpanData() {
+    const btn = document.getElementById('btnSimpan');
     const d = {
       action: "save",
       tanggal: document.getElementById('inpTgl').value,
@@ -257,9 +258,35 @@
       masuk: document.getElementById('inpMasuk').value || 0,
       keluar: document.getElementById('inpKeluar').value || 0
     };
-    if(!d.tanggal) return alert("Pilih Tanggal!");
+
+    if(!d.tanggal) return alert("Pilih Tanggal dulu, Pak!");
+    
+    // Ubah tulisan tombol agar admin tahu data sedang dikirim
+    btn.disabled = true;
+    btn.innerHTML = "MENYIMPAN...";
+
     fetch(API_URL, { method: "POST", body: JSON.stringify(d) })
-    .then(r => r.text()).then(msg => { alert(msg); location.reload(); });
+    .then(r => r.text())
+    .then(msg => { 
+      alert("Data Berhasil Disimpan!"); 
+      
+      // Kosongkan inputan biar bisa isi data baru lagi
+      document.getElementById('inpMasuk').value = "";
+      document.getElementById('inpKeluar').value = "";
+      
+      // Kembalikan tombol
+      btn.disabled = false;
+      btn.innerHTML = "SIMPAN DATA";
+
+      // Ambil data terbaru dari sheet TANPA reload halaman
+      // Ini kuncinya agar Admin TIDAK logout
+      loadData(); 
+    })
+    .catch(err => {
+      alert("Gagal simpan: " + err);
+      btn.disabled = false;
+      btn.innerHTML = "SIMPAN DATA";
+    });
   }
 </script>
 </body>
