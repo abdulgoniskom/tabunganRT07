@@ -91,6 +91,7 @@
         <tbody id="isiTabel">
           <tr><td colspan="6" class="p-4 text-muted">Sinkronisasi data...</td></tr>
         </tbody>
+        <tfoot id="kakiTabel" class="d-none"></tfoot>
       </table>
     </div>
   </div>
@@ -120,19 +121,16 @@
     });
   }
 
-  // REVISI: Logika render agar saldo terhitung per nama
   function render(data) {
     let h = "";
     if(!data || data.length === 0) {
       h = "<tr><td colspan='6' class='p-4'>Data tidak ditemukan</td></tr>";
     } else {
-      let saldoPerOrang = {}; // Dompet virtual tiap warga
-
+      let saldoPerOrang = {}; 
       data.forEach((r, i) => {
         let nama = r[2].toUpperCase();
         let masuk = parseFloat(r[3]) || 0;
         let keluar = parseFloat(r[4]) || 0;
-
         if (!saldoPerOrang[nama]) saldoPerOrang[nama] = 0;
         saldoPerOrang[nama] += (masuk - keluar);
 
@@ -167,12 +165,10 @@
     const doc = new jsPDF('p', 'mm', 'a4');
     const tglCetak = new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
     
-    // Ambil Filter untuk Judul
     const filterNama = document.getElementById('fNama').value;
     const filterTahun = document.getElementById('fTahun').value || "Semua Tahun";
     const filterBulan = document.getElementById('fBulan').options[document.getElementById('fBulan').selectedIndex].text;
 
-    // Logika Hitung Totalan dari data yang tampil
     let totalMasuk = 0;
     let totalKeluar = 0;
     filteredData.forEach(row => {
@@ -181,7 +177,6 @@
     });
     const saldoAkhir = totalMasuk - totalKeluar;
 
-    // --- HEADER PDF ---
     doc.setFontSize(14);
     doc.setFont(undefined, 'bold');
     doc.text("LAPORAN TABUNGAN RT 07 - BUMI INDAH", 105, 15, { align: "center" });
@@ -194,7 +189,6 @@
     
     doc.line(15, 33, 195, 33); 
 
-    // --- TABEL DATA ---
     doc.autoTable({
       html: '#tabelTabungan',
       startY: 38,
@@ -203,7 +197,7 @@
       styles: { fontSize: 8 },
       columnStyles: { 0: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' } },
       
-      // INI BAGIAN YANG DITAMBAHKAN: Baris penutup di bawah tabel
+      // PAKSA ISI FOOTER DI SINI
       foot: [
         [{ content: 'TOTAL MASUK', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, 
          { content: totalMasuk.toLocaleString('id-ID'), styles: { halign: 'right', fontStyle: 'bold' } }],
@@ -217,22 +211,19 @@
       footStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0] }
     });
 
-    // --- TANDA TANGAN ---
     const finalY = doc.lastAutoTable.finalY + 15;
     doc.setFontSize(10);
-    doc.setFont(undefined, 'normal');
     doc.text("Tangerang, " + tglCetak, 150, finalY);
     doc.text("Ibu RT 07,", 40, finalY + 10);
     doc.text("Bendahara Tabungan,", 150, finalY + 10);
-    
     doc.setFont(undefined, 'bold');
     doc.text("( Emil Jamilah )", 40, finalY + 35);
     doc.text("( Sri Maryani )", 150, finalY + 35);
 
-    // Simpan PDF
     const namaFile = `Laporan_${filterNama || 'RT07'}_${filterBulan}_${filterTahun}.pdf`;
     doc.save(namaFile);
   }
+
   function promptLogin() {
     const u = prompt("User:"), p = prompt("Pass:");
     if(!u || !p) return;
@@ -249,7 +240,7 @@
     });
   }
 
- function simpanData() {
+  function simpanData() {
     const btn = document.getElementById('btnSimpan');
     const d = {
       action: "save",
@@ -258,28 +249,17 @@
       masuk: document.getElementById('inpMasuk').value || 0,
       keluar: document.getElementById('inpKeluar').value || 0
     };
-
     if(!d.tanggal) return alert("Pilih Tanggal dulu, Pak!");
-    
-    // Ubah tulisan tombol agar admin tahu data sedang dikirim
     btn.disabled = true;
     btn.innerHTML = "MENYIMPAN...";
-
     fetch(API_URL, { method: "POST", body: JSON.stringify(d) })
     .then(r => r.text())
     .then(msg => { 
       alert("Data Berhasil Disimpan!"); 
-      
-      // Kosongkan inputan biar bisa isi data baru lagi
       document.getElementById('inpMasuk').value = "";
       document.getElementById('inpKeluar').value = "";
-      
-      // Kembalikan tombol
       btn.disabled = false;
       btn.innerHTML = "SIMPAN DATA";
-
-      // Ambil data terbaru dari sheet TANPA reload halaman
-      // Ini kuncinya agar Admin TIDAK logout
       loadData(); 
     })
     .catch(err => {
