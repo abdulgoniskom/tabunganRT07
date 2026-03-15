@@ -216,45 +216,87 @@
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('p', 'mm', 'a4');
     const tglCetak = new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
-    const fNama = document.getElementById('fNama').value;
-    const fPeriode = document.getElementById('fBulan').options[document.getElementById('fBulan').selectedIndex].text + " " + (document.getElementById('fTahun').value || "Semua Tahun");
+    
+    const filterNama = document.getElementById('fNama').value;
+    const filterTahun = document.getElementById('fTahun').value || "Semua Tahun";
+    const filterBulan = document.getElementById('fBulan').options[document.getElementById('fBulan').selectedIndex].text;
 
-    let tM = 0, tK = 0, saldoJalan = 0;
-    filteredData.forEach(r => { tM += parseFloat(r[3])||0; tK += parseFloat(r[4])||0; });
+    // 1. Hitung Totalan
+    let totalMasuk = 0;
+    let totalKeluar = 0;
+    filteredData.forEach(row => {
+      totalMasuk += parseFloat(row[3]) || 0;
+      totalKeluar += parseFloat(row[4]) || 0;
+    });
+    const saldoAkhir = totalMasuk - totalKeluar;
 
-    doc.setFontSize(14); doc.setFont(undefined, 'bold');
+    // 2. Header PDF
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
     doc.text("LAPORAN TABUNGAN RT 07 - BUMI INDAH", 105, 15, { align: "center" });
-    doc.setFontSize(10); doc.setFont(undefined, 'normal');
-    doc.text(`Nasabah: ${fNama || 'SEMUA'} | Periode: ${fPeriode}`, 15, 25);
-    doc.text(`Dicetak: ${tglCetak}`, 195, 25, { align: "right" });
-    doc.line(15, 28, 195, 28);
+    
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.text(`Nama Nasabah : ${filterNama ? filterNama.toUpperCase() : 'SEMUA WARGA'}`, 15, 25);
+    doc.text(`Periode Laporan : ${filterBulan} ${filterTahun}`, 15, 30);
+    doc.text(`Tanggal Cetak : ${tglCetak}`, 195, 30, { align: "right" });
+    doc.line(15, 33, 195, 33); 
 
-    const body = filteredData.map((r, i) => {
-      let m = parseFloat(r[3])||0, k = parseFloat(r[4])||0;
-      saldoJalan += (m-k);
-      return [i+1, r[1], r[2].toUpperCase(), m==0?"-":"Rp "+m.toLocaleString('id-ID'), k==0?"-":"Rp "+k.toLocaleString('id-ID'), "Rp "+saldoJalan.toLocaleString('id-ID')];
+    // Fungsi pembantu untuk format Rp dan Strip
+    const formatRupiah = (angka) => {
+      const num = parseFloat(angka) || 0;
+      if (num === 0) return "-";
+      return "Rp " + num.toLocaleString('id-ID');
+    };
+
+    // 3. Susun Data Tabel
+    let saldoJalan = 0;
+    const tableBody = filteredData.map((r, i) => {
+      const masuk = parseFloat(r[3]) || 0;
+      const keluar = parseFloat(r[4]) || 0;
+      saldoJalan += (masuk - keluar);
+
+      return [
+        i + 1, 
+        r[1], 
+        r[2].toUpperCase(), 
+        formatRupiah(masuk), 
+        formatRupiah(keluar),
+        "Rp " + saldoJalan.toLocaleString('id-ID')
+      ];
     });
 
     doc.autoTable({
-      head: [['No', 'Tanggal', 'Nama', 'Masuk', 'Keluar', 'Saldo']],
-      body: body, startY: 32, theme: 'grid', styles: { fontSize: 8 },
+      head: [['No', 'Tanggal', 'Nama Warga', 'Masuk', 'Keluar', 'Saldo']],
+      body: tableBody,
+      startY: 38,
+      theme: 'grid',
       headStyles: { fillColor: [26, 42, 58], halign: 'center' },
-      columnStyles: { 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' } },
+      styles: { fontSize: 8 },
+      columnStyles: { 
+        0: { halign: 'center' }, 
+        3: { halign: 'right' }, 
+        4: { halign: 'right' }, 
+        5: { halign: 'right' } 
+      },
       foot: [
-        [{ content: 'TOTAL MASUK', colSpan: 3, styles: { halign: 'left', fontStyle: 'bold' } }, { content: "Rp " + tM.toLocaleString('id-ID'), colSpan: 3, styles: { halign: 'right', fontStyle: 'bold' } }],
-        [{ content: 'TOTAL KELUAR', colSpan: 3, styles: { halign: 'left', fontStyle: 'bold' } }, { content: "Rp " + tK.toLocaleString('id-ID'), colSpan: 3, styles: { halign: 'right', fontStyle: 'bold' } }],
-        [{ content: 'TOTAL SALDO AKHIR', colSpan: 3, styles: { halign: 'left', fontStyle: 'bold' } }, { content: "Rp " + (tM-tK).toLocaleString('id-ID'), colSpan: 3, styles: { halign: 'right', fontStyle: 'bold', fillColor: [243, 156, 18] } }]
+        [{ content: 'TOTAL MASUK', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, { content: "Rp " + totalMasuk.toLocaleString('id-ID'), styles: { halign: 'right' } }],
+        [{ content: 'TOTAL KELUAR', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, { content: "Rp " + totalKeluar.toLocaleString('id-ID'), styles: { halign: 'right' } }],
+        [{ content: 'TOTAL SALDO AKHIR', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, { content: "Rp " + saldoAkhir.toLocaleString('id-ID'), styles: { halign: 'right', fillColor: [243, 156, 18], textColor: [0, 0, 0] } }]
       ]
     });
 
+    // 4. Tanda Tangan
     const finalY = doc.lastAutoTable.finalY + 15;
+    doc.setFontSize(10);
     doc.text("Tangerang, " + tglCetak, 150, finalY);
     doc.text("Ibu RT 07,", 40, finalY + 10);
-    doc.text("Bendahara,", 150, finalY + 10);
+    doc.text("Bendahara Tabungan,", 150, finalY + 10);
     doc.setFont(undefined, 'bold');
     doc.text("( Emil Jamilah )", 40, finalY + 35);
     doc.text("( Sri Maryani )", 150, finalY + 35);
-    doc.save(`Laporan_RT07_${fNama||'Warga'}.pdf`);
+
+    doc.save(`Laporan_${filterNama || 'RT07'}.pdf`);
   }
 </script>
 </body>
