@@ -172,7 +172,7 @@
     const filterTahun = document.getElementById('fTahun').value || "Semua Tahun";
     const filterBulan = document.getElementById('fBulan').options[document.getElementById('fBulan').selectedIndex].text;
 
-    // Logika Hitung Totalan
+    // Logika Hitung Totalan dari data yang tampil
     let totalMasuk = 0;
     let totalKeluar = 0;
     filteredData.forEach(row => {
@@ -203,12 +203,12 @@
       styles: { fontSize: 8 },
       columnStyles: { 0: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' } },
       
-      // REVISI: Penambahan 3 baris totalan di bawah tabel
+      // INI BAGIAN YANG DITAMBAHKAN: Baris penutup di bawah tabel
       foot: [
-        [{ content: 'TOTAL SALDO MASUK', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, 
+        [{ content: 'TOTAL MASUK', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, 
          { content: totalMasuk.toLocaleString('id-ID'), styles: { halign: 'right', fontStyle: 'bold' } }],
         
-        [{ content: 'TOTAL SALDO KELUAR', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, 
+        [{ content: 'TOTAL KELUAR', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, 
          { content: totalKeluar.toLocaleString('id-ID'), styles: { halign: 'right', fontStyle: 'bold' } }],
         
         [{ content: 'TOTAL SALDO AKHIR', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, 
@@ -229,7 +229,7 @@
     doc.text("( Emil Jamilah )", 40, finalY + 35);
     doc.text("( Sri Maryani )", 150, finalY + 35);
 
-    // Penamaan File
+    // Simpan PDF
     const namaFile = `Laporan_${filterNama || 'RT07'}_${filterBulan}_${filterTahun}.pdf`;
     doc.save(namaFile);
   }
