@@ -165,10 +165,14 @@
   function generatePDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('p', 'mm', 'a4');
-    const tgl = new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
+    const tglCetak = new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
+    
+    // Ambil Filter untuk Judul
     const filterNama = document.getElementById('fNama').value;
+    const filterTahun = document.getElementById('fTahun').value || "Semua Tahun";
+    const filterBulan = document.getElementById('fBulan').options[document.getElementById('fBulan').selectedIndex].text;
 
-    // Hitung Totalan hanya dari data yang sudah difilter
+    // Logika Hitung Total
     let totalMasuk = 0;
     let totalKeluar = 0;
     filteredData.forEach(row => {
@@ -177,41 +181,51 @@
     });
     const saldoAkhir = totalMasuk - totalKeluar;
 
+    // --- HEADER PDF ---
     doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
     doc.text("LAPORAN TABUNGAN RT 07 - BUMI INDAH", 105, 15, { align: "center" });
+    
     doc.setFontSize(10);
-    const subJudul = filterNama ? `Laporan Riwayat Tabungan: ${filterNama.toUpperCase()}` : "Laporan Saldo Tabungan Keseluruhan";
-    doc.text(subJudul, 105, 21, { align: "center" });
-    doc.line(15, 24, 195, 24);
+    doc.setFont(undefined, 'normal');
+    doc.text(`Nama Nasabah : ${filterNama ? filterNama.toUpperCase() : 'Semua Warga'}`, 15, 25);
+    doc.text(`Periode Laporan : ${filterBulan} ${filterTahun}`, 15, 30);
+    doc.text(`Tanggal Cetak : ${tglCetak}`, 195, 30, { align: "right" });
+    
+    doc.line(15, 33, 195, 33); // Garis Pembatas
 
+    // --- TABEL DATA ---
     doc.autoTable({
       html: '#tabelTabungan',
-      startY: 28,
+      startY: 38,
       theme: 'grid',
       headStyles: { fillColor: [26, 42, 58], halign: 'center' },
       styles: { fontSize: 8 },
       columnStyles: { 0: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' } },
+      
+      // Baris Total Saldo di Bawah Tabel
       foot: [[
-        { content: filterNama ? `TOTAL TABUNGAN ${filterNama.toUpperCase()}` : 'TOTAL KESELURUHAN', colSpan: 3, styles: { halign: 'right', fontStyle: 'bold' } },
-        { content: totalMasuk.toLocaleString('id-ID'), styles: { halign: 'right', fontStyle: 'bold' } },
-        { content: totalKeluar.toLocaleString('id-ID'), styles: { halign: 'right', fontStyle: 'bold' } },
-        { content: saldoAkhir.toLocaleString('id-ID'), styles: { halign: 'right', fontStyle: 'bold', fillColor: [243, 156, 18] } }
+        { content: 'TOTAL SALDO TABUNGAN', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } },
+        { content: saldoAkhir.toLocaleString('id-ID'), styles: { halign: 'right', fontStyle: 'bold', fillColor: [243, 156, 18], textColor: [0, 0, 0] } }
       ]],
-      footStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0] }
+      footStyles: { fillColor: [230, 230, 230] }
     });
 
+    // --- TANDA TANGAN ---
     const finalY = doc.lastAutoTable.finalY + 15;
-    doc.text("Tangerang, " + tgl, 150, finalY);
+    doc.setFontSize(10);
+    doc.text("Tangerang, " + tglCetak, 150, finalY);
     doc.text("Ibu RT 07,", 40, finalY + 10);
     doc.text("Bendahara Tabungan,", 150, finalY + 10);
+    
     doc.setFont(undefined, 'bold');
     doc.text("( Emil Jamilah )", 40, finalY + 35);
     doc.text("( Sri Maryani )", 150, finalY + 35);
 
-    const namaFile = filterNama ? `Tabungan_${filterNama.replace(/ /g,'_')}.pdf` : `Laporan_Tabungan_RT07.pdf`;
+    // Penamaan File Otomatis
+    const namaFile = `Laporan_${filterNama || 'RT07'}_${filterBulan}_${filterTahun}.pdf`;
     doc.save(namaFile);
   }
-
   function promptLogin() {
     const u = prompt("User:"), p = prompt("Pass:");
     if(!u || !p) return;
